@@ -41,6 +41,9 @@ public abstract class SolverAgent extends Agent {
                 MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
                 ACLMessage msg = myAgent.receive(mt);
                 if (msg != null) {
+                    System.out.println(getAID().getName() + ": CFP message");
+                    System.out.println("\t"+msg.getContent());
+
                     // CFP Message received. Process it
                     //String operator = msg.getContent();
                     ACLMessage reply = msg.createReply();
@@ -49,7 +52,7 @@ public abstract class SolverAgent extends Agent {
                     //if (operator.charAt(0) == '+') {
                         // The requested book is available for sale. Reply with the price
                         reply.setPerformative(ACLMessage.PROPOSE);
-                        reply.setContent(String.valueOf(1));
+                        reply.setContent(String.valueOf(1)); // todo should be random for lulzsake
                    // }
                     /*else {
                         // The requested book is NOT available for sale.
@@ -72,15 +75,22 @@ public abstract class SolverAgent extends Agent {
                 ACLMessage msg = myAgent.receive(mt);
                 if (msg != null) {
                     // ACCEPT_PROPOSAL Message received. Process it
+
+                    System.out.println(getAID().getName() + ": Received accept");
+
                     String expression = msg.getContent();
+                    expression = expression.replaceAll("[ ]{2,}", " ");
                     ACLMessage reply = msg.createReply();
 
                     String[] elements = expression.split(" ");
+                    System.out.println("\t" + expression);
                     double firstOperand = Double.parseDouble(elements[1]);
                     double secondOperand = Double.parseDouble(elements[2]);
 
                     reply.setPerformative(ACLMessage.INFORM);
-                    reply.setContent(String.valueOf(calculate(firstOperand,secondOperand)));
+                    reply.setContent(String.valueOf(calculate(firstOperand, secondOperand)));
+
+                    System.out.println("\tReply content: " + reply.getContent());
 
                     myAgent.send(reply);
                 }

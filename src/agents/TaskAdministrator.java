@@ -107,7 +107,7 @@ public class TaskAdministrator extends Agent {
                     fe.printStackTrace();
                 }
                 // Perform the request
-                myAgent.addBehaviour(new RequestPerformer(myAgent,solverAgents, targetMathProblem));
+                myAgent.addBehaviour(new RequestPerformer(myAgent, solverAgents, targetMathProblem));
             }
         });
     }
@@ -123,13 +123,22 @@ public class TaskAdministrator extends Agent {
             default: description = Constants.GENERAL_SOLVING_DESCRIPTION_TYPE;
         }
 
-        if(expression.isLeafExpression()) {
+        // Only perform calculations for leafnodes
+        if (expression.isLeafExpression()) {
+
+            // todo targetMathProblem cannot be used with recursion..
             targetMathProblem = expression;
             runAuction(description);
-        }else{
+        } else {
+
+            // todo These calls do not block..
             double firstOperand = runCalculation(new Expression(expression.firstOperand)).result;
+
             double secondOperand = runCalculation(new Expression(expression.secondOperand)).result;
-            runCalculation(new Expression(expression.operator, ""+firstOperand,""+secondOperand));
+
+            System.out.println("TaskAdmin result from: " + expression.toString() + " => " + firstOperand + " " + secondOperand);
+
+            runCalculation(new Expression(expression.operator, String.valueOf(firstOperand), String.valueOf(secondOperand)));
         }
 
         return expression;
@@ -175,7 +184,7 @@ public class TaskAdministrator extends Agent {
     private void handleButtonAction() {
         Expression base = parseInput(input.getText());
 
-        setResult(""+runCalculation(base).result);
+        setResult("" + runCalculation(base).result);
         //result.setText(String.valueOf(runCalculation(base)));
 
     }

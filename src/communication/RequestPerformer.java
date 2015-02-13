@@ -1,6 +1,5 @@
 package communication;
 
-import agents.TaskAdministrator;
 import calculation.Expression;
 import jade.core.AID;
 import jade.core.Agent;
@@ -27,10 +26,10 @@ public class RequestPerformer extends Behaviour {
 
     @Override
     public void action() {
-        System.out.println("step: " + step);
+        System.out.println("step: " + step + " for " + this.myAgent.getClass().getSimpleName());
         switch (step) {
-            case 0:
-                // Send the cfp to all solvers
+            case 0: // Send the cfp to all solvers
+
                 ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
                 for (int i = 0; i < solverAgents.length; ++i) {
                     cfp.addReceiver(solverAgents[i]);
@@ -44,8 +43,8 @@ public class RequestPerformer extends Behaviour {
                         MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
                 step = 1;
                 break;
-            case 1:
-                // Receive all proposals/refusals from seller agents
+            case 1: // Receive all proposals/refusals from seller agents
+
                 ACLMessage reply = myAgent.receive(mt);
                 if (reply != null) {
                     // Reply received
@@ -66,8 +65,8 @@ public class RequestPerformer extends Behaviour {
                 else {
                     block(); }
                 break;
-            case 2:
-                // Send the expression to the best solver
+            case 2: // Send the expression to the best solver
+
                 ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
                 order.addReceiver(bestSolver);
                 order.setContent(targetMathProblem.toString());
@@ -79,8 +78,8 @@ public class RequestPerformer extends Behaviour {
                         MessageTemplate.MatchInReplyTo(order.getReplyWith()));
                 step = 3;
                 break;
-            case 3:
-                // Receive the result
+            case 3: // Receive the result
+
                 reply = myAgent.receive(mt);
                 if (reply != null) {
                     System.out.println("received reply");

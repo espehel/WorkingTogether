@@ -24,16 +24,17 @@ public class Expression {
         operator = elements[0].charAt(0);
         firstOperand = "";
         secondOperand = "";
+
         for (int i = 1; i < elements.length; i++) {
-            if(i<= mid)
-                firstOperand += elements[i]+" ";
-            else if (i>mid)
-                secondOperand += elements[i]+" ";
+            if (i <= mid)
+                firstOperand += elements[i] + " ";
+            else if (i > mid)
+                secondOperand += elements[i] + " ";
         }
     }
 
     public boolean isLeafExpression(){
-        return !firstOperand.contains(" ") && !secondOperand.contains(" ");
+        return !firstOperand.trim().contains(" ") && !secondOperand.trim().contains(" ");
     }
 
     @Override
