@@ -21,7 +21,6 @@ public abstract class SolverAgent extends Agent {
 
     @Override
     protected void setup(){
-
         name = "Math-Solver-agent";
         descriptionType = Constants.GENERAL_SOLVING_DESCRIPTION_TYPE;
         descriptionName = "JADE-Math-Solver";
@@ -30,7 +29,6 @@ public abstract class SolverAgent extends Agent {
         System.out.println("Hello! "+ name + getAID().getName() + " is ready.");
 
         initiate();
-
     }
 
     protected abstract double calculate(double firstOperand, double secondOperand);
