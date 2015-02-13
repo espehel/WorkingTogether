@@ -88,7 +88,8 @@ public class RequestPerformer extends Behaviour {
                     if (reply.getPerformative() == ACLMessage.INFORM) {
                         // Result Succesfull
                         System.out.println(targetMathProblem + " = " + reply.getContent());
-                        ((TaskAdministrator)myAgent).setResult(reply.getContent());
+                        targetMathProblem.result = Double.parseDouble(reply.getContent());
+                        //((TaskAdministrator)myAgent).setResult(reply.getContent());
                     }
                     step = 4; }
                 else {

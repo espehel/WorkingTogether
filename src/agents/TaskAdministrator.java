@@ -109,11 +109,10 @@ public class TaskAdministrator extends Agent {
                 // Perform the request
                 myAgent.addBehaviour(new RequestPerformer(myAgent,solverAgents, targetMathProblem));
             }
-
         });
     }
 
-    private double runCalculation(Expression expression){
+    private Expression runCalculation(Expression expression){
 
         String description;
         switch (expression.operator){
@@ -123,9 +122,17 @@ public class TaskAdministrator extends Agent {
             case '*' : description = Constants.MULTIPLICATION_SOLVING_DESCRIPTION_TYPE;break;
             default: description = Constants.GENERAL_SOLVING_DESCRIPTION_TYPE;
         }
-        targetMathProblem = expression;
-        runAuction(description);
-        return 0;
+
+        if(expression.isLeafExpression()) {
+            targetMathProblem = expression;
+            runAuction(description);
+        }else{
+            double firstOperand = runCalculation(new Expression(expression.firstOperand)).result;
+            double secondOperand = runCalculation(new Expression(expression.secondOperand)).result;
+            runCalculation(new Expression(expression.operator, ""+firstOperand,""+secondOperand));
+        }
+
+        return expression;
     }
 
     private Expression parseInput(String text) {
@@ -168,7 +175,7 @@ public class TaskAdministrator extends Agent {
     private void handleButtonAction() {
         Expression base = parseInput(input.getText());
 
-        runCalculation(base);
+        setResult(""+runCalculation(base).result);
         //result.setText(String.valueOf(runCalculation(base)));
 
     }

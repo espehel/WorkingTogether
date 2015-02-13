@@ -7,6 +7,7 @@ public class Expression {
     public char operator;
     public String firstOperand;
     public String secondOperand;
+    public double result;
 
     public Expression(char operator, String firstOperand, String secondOperand) {
         this.operator = operator;
@@ -15,6 +16,7 @@ public class Expression {
     }
 
     public Expression(String text) {
+        System.out.println("["+text+"]");
         String[] elements = text.split(" ");
 
         int mid = (elements.length-1)/2;
@@ -31,7 +33,7 @@ public class Expression {
     }
 
     public boolean isLeafExpression(){
-        return firstOperand.length()==1 && secondOperand.length()==1;
+        return !firstOperand.contains(" ") && !secondOperand.contains(" ");
     }
 
     @Override
