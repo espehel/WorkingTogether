@@ -30,6 +30,5 @@ public class TaskAdministratorGUI extends Application {
     }
     public static void run(String[] args){
         launch(args);
-
     }
 }
