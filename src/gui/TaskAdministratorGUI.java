@@ -23,9 +23,7 @@ public class TaskAdministratorGUI extends Application {
         loader.setController(TaskAdministrator.getInstance());
         Parent root = loader.load();
 
-
         Scene scene = new Scene(root);
-
 
         stage.setScene(scene);
         stage.show();

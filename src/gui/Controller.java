@@ -20,11 +20,8 @@ public class Controller {
     @FXML
     Label result;
 
-
     @FXML
     private void initialize(){
 
     }
-
-
 }
