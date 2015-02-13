@@ -1,1 +1,1 @@
-http://dhcp-050058.wlan.ntnu.no:7778/acc
+http://dhcp-051018.wlan.ntnu.no:7778/acc

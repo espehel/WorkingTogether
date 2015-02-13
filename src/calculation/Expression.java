@@ -17,23 +17,21 @@ public class Expression {
     public Expression(String text) {
         String[] elements = text.split(" ");
 
-        operator = elements[0].charAt(0);
-        firstOperand = elements[1];
-        secondOperand = elements[2];
+        int mid = (elements.length-1)/2;
 
+        operator = elements[0].charAt(0);
+        firstOperand = "";
+        secondOperand = "";
+        for (int i = 1; i < elements.length; i++) {
+            if(i<= mid)
+                firstOperand += elements[i]+" ";
+            else if (i>mid)
+                secondOperand += elements[i]+" ";
+        }
     }
 
     public boolean isLeafExpression(){
         return firstOperand.length()==1 && secondOperand.length()==1;
-    }
-    private Expression getSubExpression(String subExpression){
-        return new Expression(subExpression.charAt(0),subExpression.substring(0,((subExpression.length()-1)/2)),subExpression.substring(subExpression.length()/2));
-    }
-    public Expression getFirstSubExpression(){
-        return getSubExpression(firstOperand);
-    }
-    public Expression getSecondSubExpression(){
-        return getSubExpression(secondOperand);
     }
 
     @Override
