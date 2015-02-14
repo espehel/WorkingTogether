@@ -50,6 +50,7 @@ public class RequestPerformer extends Behaviour {
                     ACLMessage reply = myAgent.receive(mt);
                     if (reply != null) {
                         // Reply received
+                        System.out.println("Received reply: " + reply.getPerformative());
                         if (reply.getPerformative() == ACLMessage.PROPOSE) {
                             // This is an offer
                             int utility = Integer.parseInt(reply.getContent());
