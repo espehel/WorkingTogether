@@ -1,5 +1,6 @@
 package communication;
 
+import agents.TaskAdministrator;
 import calculation.Expression;
 import jade.core.AID;
 import jade.core.Agent;
@@ -26,77 +27,95 @@ public class RequestPerformer extends Behaviour {
 
     @Override
     public void action() {
-        System.out.println("step: " + step + " for " + this.myAgent.getClass().getSimpleName());
-        switch (step) {
-            case 0: // Send the cfp to all solvers
+        while(!done()) {
+           // System.out.println("step: " + step + " for " + this.myAgent.getClass().getSimpleName());
+            switch (step) {
+                case 0: // Send the cfp to all solvers
 
-                ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-                for (int i = 0; i < solverAgents.length; ++i) {
-                    cfp.addReceiver(solverAgents[i]);
-                }
-                //cfp.setContent(targetMathProblem.toString());
-                cfp.setConversationId("math-solving");
-                cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique value
-                myAgent.send(cfp);
-                // Prepare the template to get proposals
-                mt = MessageTemplate.and(MessageTemplate.MatchConversationId("math-solving"),
-                        MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
-                step = 1;
-                break;
-            case 1: // Receive all proposals/refusals from seller agents
+                    ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+                    for (int i = 0; i < solverAgents.length; ++i) {
+                        cfp.addReceiver(solverAgents[i]);
+                    }
+                    //cfp.setContent(targetMathProblem.toString());
+                    cfp.setConversationId("math-solving");
+                    cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique value
+                    myAgent.send(cfp);
+                    // Prepare the template to get proposals
+                    mt = MessageTemplate.and(MessageTemplate.MatchConversationId("math-solving"),
+                            MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
+                    step = 1;
+                    break;
+                case 1: // Receive all proposals/refusals from seller agents
 
-                ACLMessage reply = myAgent.receive(mt);
-                if (reply != null) {
-                    // Reply received
-                    if (reply.getPerformative() == ACLMessage.PROPOSE) {
-                        // This is an offer
-                        int utility = Integer.parseInt(reply.getContent());
-                        if (bestSolver == null || utility < bestUtility) {
-                            // This is the best offer at present
-                            bestUtility = utility;
-                            bestSolver = reply.getSender();
+                    ACLMessage reply = myAgent.receive(mt);
+                    if (reply != null) {
+                        // Reply received
+                        if (reply.getPerformative() == ACLMessage.PROPOSE) {
+                            // This is an offer
+                            int utility = Integer.parseInt(reply.getContent());
+                            if (bestSolver == null || utility < bestUtility) {
+                                // This is the best offer at present
+                                bestUtility = utility;
+                                bestSolver = reply.getSender();
+                            }
                         }
+                        repliesCnt++;
+                        if (repliesCnt >= solverAgents.length) {
+                            // We received all replies
+                            step = 2;
+                        }
+                    } else {
+                        block();
                     }
-                    repliesCnt++;
-                    if (repliesCnt >= solverAgents.length) {
-                        // We received all replies
-                        step = 2; }
-                }
-                else {
-                    block(); }
-                break;
-            case 2: // Send the expression to the best solver
+                    break;
+                case 2: // Send the expression to the best solver
 
-                ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-                order.addReceiver(bestSolver);
-                order.setContent(targetMathProblem.toString());
-                order.setConversationId("math-solver");
-                order.setReplyWith("order" + System.currentTimeMillis());
-                myAgent.send(order);
-                // Prepare the template to get the purchase order reply
-                mt = MessageTemplate.and(MessageTemplate.MatchConversationId("math-solver"),
-                        MessageTemplate.MatchInReplyTo(order.getReplyWith()));
-                step = 3;
-                break;
-            case 3: // Receive the result
+                    ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+                    order.addReceiver(bestSolver);
+                    order.setContent(targetMathProblem.stringRepresentation());
+                    order.setConversationId("math-solver");
+                    order.setReplyWith("order" + System.currentTimeMillis());
+                    myAgent.send(order);
+                    // Prepare the template to get the purchase order reply
+                    mt = MessageTemplate.and(MessageTemplate.MatchConversationId("math-solver"),
+                            MessageTemplate.MatchInReplyTo(order.getReplyWith()));
+                    step = 3;
+                    break;
+                case 3: // Receive the result
 
-                reply = myAgent.receive(mt);
-                if (reply != null) {
-                    System.out.println("received reply");
-                    // Result reply received
-                    if (reply.getPerformative() == ACLMessage.INFORM) {
-                        // Result Succesfull
-                        System.out.println(targetMathProblem + " = " + reply.getContent());
-                        targetMathProblem.result = Double.parseDouble(reply.getContent());
-                        //((TaskAdministrator)myAgent).setResult(reply.getContent());
+                    reply = myAgent.receive(mt);
+                    if (reply != null) {
+                        System.out.println("received reply");
+                        // Result reply received
+                        if (reply.getPerformative() == ACLMessage.INFORM) {
+                            // Result Succesfull
+                            System.out.println(targetMathProblem + " = " + reply.getContent());
+                            targetMathProblem.result = Double.parseDouble(reply.getContent());
+                        }
+                        step = 4;
+                    } else {
+                        block();
                     }
-                    step = 4; }
-                else {
-                    block();
-                }
-                break; }
+                    break;
+            }
+        }
     }
     public boolean done() {
         return ((step == 2 && bestSolver == null) || step == 4);
+    }
+
+    /**
+     *
+     * @return 1 if a new expression is added to the behavour pool, 0 if there is no more expressions
+     */
+    @Override
+    public int onEnd() {
+        Expression next = ((TaskAdministrator)myAgent).getNextExpression();
+        if(next == null)
+            return 0;
+        else {
+            ((TaskAdministrator) myAgent).runAuction(next);
+            return 1;
+        }
     }
 }

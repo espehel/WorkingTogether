@@ -6,8 +6,6 @@ import gui.TaskAdministratorGUI;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.SimpleBehaviour;
-import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -17,7 +15,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import utils.Constants;
+
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
 
 /**
  * Created by espen on 10/02/15.
@@ -28,6 +30,10 @@ public class TaskAdministrator extends Agent {
     private Expression targetMathProblem;
     // The list of known math solver agents
     private AID[] solverAgents;
+    //map of expressionCatalogue
+    private Map<Integer,Expression> expressionCatalogue = new HashMap<Integer, Expression>();
+    //queue for the expressionCatalogue
+    private Queue<Expression> expressionQueue = new ArrayDeque<Expression>();
 
     private String name;
 
@@ -50,42 +56,9 @@ public class TaskAdministrator extends Agent {
                 TaskAdministratorGUI.run((String[]) getArguments());
             }
         }).start();
-
-        // Get the title of the book to buy as a start-up argument
-
-
-        /*Object[] args = getArguments();
-        if (args != null && args.length > 0) {
-            targetMathProblem = (String) args[0];
-            System.out.println("Trying to solve " + targetMathProblem);
-
-
-
-            // Add a TickerBehaviour that schedules a request to seller agents every minute
-            addBehaviour(new TickerBehaviour(this, 60000) {
-                protected void onTick() {
-                    // Update the list of seller agents
-                    DFAgentDescription template = new DFAgentDescription();
-                    ServiceDescription sd = new ServiceDescription();
-                    sd.setType("math-solving");
-                    template.addServices(sd);
-                    try {
-                        DFAgentDescription[] result = DFService.search(myAgent, template);
-                        solverAgents = new AID[result.length];
-                        for (int i = 0; i < result.length; ++i) {
-                            solverAgents[i] = result[i].getName();
-                        }
-                    } catch (FIPAException fe) {
-                        fe.printStackTrace();
-                    }
-                    // Perform the request
-                    myAgent.addBehaviour(new RequestPerformer(solverAgents, targetMathProblem));
-                }
-            });
-        }*/
     }
 
-    private void runAuction(final String description){
+    public void runAuction(final Expression expression){
 
 
         // Sends a description of tasks to all solvers and wait for their proposal
@@ -94,7 +67,7 @@ public class TaskAdministrator extends Agent {
             public void action() {
                 DFAgentDescription template = new DFAgentDescription();
                 ServiceDescription sd = new ServiceDescription();
-                sd.setType(description);
+                sd.setType(expression.getDescription());
                 template.addServices(sd);
                 try {
                     DFAgentDescription[] result = DFService.search(myAgent, template);
@@ -106,53 +79,51 @@ public class TaskAdministrator extends Agent {
                 } catch (FIPAException fe) {
                     fe.printStackTrace();
                 }
-                // Perform the request
-                myAgent.addBehaviour(new RequestPerformer(myAgent, solverAgents, targetMathProblem));
+                //perform the request with this expression
+                myAgent.addBehaviour(new RequestPerformer(myAgent, solverAgents, expression));
+
             }
         });
     }
 
-    private Expression runCalculation(Expression expression){
-
-        String description;
-        switch (expression.operator){
-            case '+' : description = Constants.ADDITION_SOLVING_DESCRIPTION_TYPE;break;
-            case '-' : description = Constants.SUBTRACTION_SOLVING_DESCRIPTION_TYPE;break;
-            case '/' : description = Constants.DIVISION_SOLVING_DESCRIPTION_TYPE;break;
-            case '*' : description = Constants.MULTIPLICATION_SOLVING_DESCRIPTION_TYPE;break;
-            default: description = Constants.GENERAL_SOLVING_DESCRIPTION_TYPE;
+    public Expression getNextExpression(){
+        if(expressionQueue.isEmpty()){
+            setResult(String.valueOf(expressionCatalogue.get(0).result));
+            reset();
+            return null;
         }
 
-        // Only perform calculations for leafnodes
-        if (expression.isLeafExpression()) {
+        Expression next = expressionQueue.poll();
 
-            // todo targetMathProblem cannot be used with recursion..
-            targetMathProblem = expression;
-            runAuction(description);
-        } else {
-
-            // todo These calls do not block..
-            double firstOperand = runCalculation(new Expression(expression.firstOperand)).result;
-
-            double secondOperand = runCalculation(new Expression(expression.secondOperand)).result;
-
-            System.out.println("TaskAdmin result from: " + expression.toString() + " => " + firstOperand + " " + secondOperand);
-
-            runCalculation(new Expression(expression.operator, String.valueOf(firstOperand), String.valueOf(secondOperand)));
+        if(!next.isLeafExpression){
+            next.firstOperand = String.valueOf(expressionCatalogue.get(Integer.parseInt(next.firstOperand)).result);
+            next.secondOperand = String.valueOf(expressionCatalogue.get(Integer.parseInt(next.secondOperand)).result);
         }
 
-        return expression;
+        return next;
     }
 
-    private Expression parseInput(String text) {
-        //retreiving values
-        char operator = text.charAt(0);
-        int middle = text.length()/2;
-        String operand1 = text.substring(0,middle-1);
-        String operand2 = text.substring(middle);
+    private void reset() {
+        Expression.resetIdGenerator();
+        expressionCatalogue.clear();
+        expressionQueue.clear();
+    }
 
-        return new Expression(text);
-        //return new Expression(operator,operand1,operand2);
+    private Expression buildTree(Expression expression) {
+        // Leafnodes are placed in the hashmap
+        if (expression.isLeafExpression) {
+            expressionCatalogue.put(expression.getId(), expression);
+            expressionQueue.add(expression);
+        } else {
+
+            // normal nodes have the id to their childs as the operands
+            expression.firstOperand = String.valueOf(buildTree(new Expression(expression.firstOperand)).getId());
+            expression.secondOperand = String.valueOf(buildTree(new Expression(expression.secondOperand)).getId());
+            expressionCatalogue.put(expression.getId(), expression);
+            expressionQueue.add(expression);
+        }
+        System.out.println(expression);
+        return expression;
 
     }
 
@@ -182,11 +153,8 @@ public class TaskAdministrator extends Agent {
     }
     @FXML
     private void handleButtonAction() {
-        Expression base = parseInput(input.getText());
-
-        setResult("" + runCalculation(base).result);
-        //result.setText(String.valueOf(runCalculation(base)));
-
+        buildTree(new Expression(input.getText()));
+        runAuction(expressionQueue.poll());
     }
     public void setResult(final String result){
 
